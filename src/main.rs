@@ -3,9 +3,9 @@
 
 /// Reference: https://github.com/PROMETHIA-27/dependency_injection_like_bevy_from_scratch/blob/main/src/chapter2/src/more_params.rs
 
-mod scheduler;
+mod app;
 
-use scheduler::Scheduler;
+use app::App;
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
@@ -111,7 +111,7 @@ fn foo(number: Res<i32>) {
 }
 
 fn main() {
-    let mut scheduler = Scheduler::new();
+    let mut scheduler = App::new();
     scheduler.add_system(foo);
     scheduler.add_resource(42i32);
     scheduler.run();

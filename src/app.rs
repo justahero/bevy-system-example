@@ -7,14 +7,14 @@ use crate::{IntoSystem, System};
 
 pub type StoredSystem = Box<dyn System>;
 
-pub struct Scheduler {
+pub struct App {
     pub systems: Vec<StoredSystem>,
     pub resources: HashMap<TypeId, Box<dyn Any>>,
 }
 
-impl Scheduler {
+impl App {
     pub fn new() -> Self {
-        Scheduler {
+        App {
             systems: Vec::new(),
             resources: HashMap::new(),
         }
