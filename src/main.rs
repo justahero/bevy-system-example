@@ -6,7 +6,7 @@
 mod app;
 
 use app::{App, AppContext};
-use std::{any::TypeId, marker::PhantomData};
+use std::{any::TypeId, marker::PhantomData, ops::Deref};
 
 struct FunctionSystem<Input, F> {
     f: F,
@@ -85,6 +85,14 @@ impl<'a, T: 'static> Res<'a, T> {
     }
 }
 
+impl<T: 'static> Deref for Res<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.value
+    }
+}
+
 impl<'res, T: 'static> SystemParam for Res<'res, T> {
     type Item<'new> = Res<'new, T>;
 
@@ -100,7 +108,7 @@ impl<'res, T: 'static> SystemParam for Res<'res, T> {
 }
 
 fn foo(number: Res<i32>) {
-    println!("Value is {0}", number.inner());
+    println!("Value is {0}", *number);
 }
 
 fn main() {
