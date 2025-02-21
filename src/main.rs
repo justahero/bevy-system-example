@@ -1,11 +1,12 @@
 #![allow(dead_code)]
 #![allow(unused_mut)]
 #![allow(unused_variables)]
+#![allow(unused_imports)]
 
 /// Reference: https://github.com/PROMETHIA-27/dependency_injection_like_bevy_from_scratch/blob/main/src/chapter2/src/more_params.rs
 mod app;
 
-use app::{App, AppContext};
+use app::{App, AppContext, Surface};
 use std::{any::TypeId, marker::PhantomData, ops::Deref};
 
 struct FunctionSystem<Input, F> {
@@ -69,10 +70,24 @@ where
     }
 }
 
+trait IntoSystemParam: 'static {
+    fn cast<'r>(context: &'r mut AppContext) -> &'r Self;
+}
+
+/// TODO: Offer a conversion into SystemParam that implements the multiple different lookups.
+/// e.g. Surface & Res<T>,
 trait SystemParam {
     type Item<'new>;
 
     fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
+}
+
+impl<T: IntoSystemParam> SystemParam for T {
+    type Item<'new> = &'new T;
+
+    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+        T::cast(context)
+    }
 }
 
 struct Res<'a, T: 'static> {
