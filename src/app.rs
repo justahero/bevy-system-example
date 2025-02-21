@@ -5,24 +5,42 @@ use std::{
 
 use crate::{IntoSystem, System};
 
+pub type TypeMap = HashMap<TypeId, Box<dyn Any>>;
+
 pub type StoredSystem = Box<dyn System>;
+
+pub struct Surface {}
+
+pub struct AppContext {
+    pub surface: Surface,
+    pub resources: TypeMap,
+}
+
+impl AppContext {
+    pub fn new() -> Self {
+        Self {
+            surface: Surface {},
+            resources: TypeMap::new(),
+        }
+    }
+}
 
 pub struct App {
     pub systems: Vec<StoredSystem>,
-    pub resources: HashMap<TypeId, Box<dyn Any>>,
+    pub context: AppContext,
 }
 
 impl App {
     pub fn new() -> Self {
         App {
             systems: Vec::new(),
-            resources: HashMap::new(),
+            context: AppContext::new(),
         }
     }
 
     pub fn run(&mut self) {
         for system in self.systems.iter_mut() {
-            system.call(&mut self.resources);
+            system.call(&mut self.context);
         }
     }
 
@@ -31,6 +49,6 @@ impl App {
     }
 
     pub fn add_resource<R: 'static>(&mut self, resource: R) {
-        self.resources.insert(TypeId::of::<R>(), Box::new(resource));
+        self.context.resources.insert(TypeId::of::<R>(), Box::new(resource));
     }
 }

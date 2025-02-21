@@ -1,18 +1,12 @@
 #![allow(dead_code)]
 #![allow(unused_mut)]
+#![allow(unused_variables)]
 
 /// Reference: https://github.com/PROMETHIA-27/dependency_injection_like_bevy_from_scratch/blob/main/src/chapter2/src/more_params.rs
-
 mod app;
 
-use app::App;
-use std::{
-    any::{Any, TypeId},
-    collections::HashMap,
-    marker::PhantomData,
-};
-
-type TypeMap = HashMap<TypeId, Box<dyn Any>>;
+use app::{App, AppContext};
+use std::{any::TypeId, marker::PhantomData};
 
 struct FunctionSystem<Input, F> {
     f: F,
@@ -20,7 +14,7 @@ struct FunctionSystem<Input, F> {
 }
 
 pub trait System {
-    fn call(&mut self, resources: &mut TypeMap);
+    fn call(&mut self, context: &mut AppContext);
 }
 
 trait IntoSystem<Input> {
@@ -30,7 +24,7 @@ trait IntoSystem<Input> {
 }
 
 impl<F: FnMut()> System for FunctionSystem<(), F> {
-    fn call(&mut self, _resources: &mut TypeMap) {
+    fn call(&mut self, _context: &mut AppContext) {
         (self.f)()
     }
 }
@@ -53,10 +47,8 @@ impl<F, T1: SystemParam> System for FunctionSystem<(T1,), F>
 where
     for<'a, 'b> &'a mut F: FnMut(T1) + FnMut(<T1 as SystemParam>::Item<'b>),
 {
-    fn call(&mut self, resources: &mut TypeMap) {
-        fn call_inner<T1>(
-            mut f: impl FnMut(T1,), t1: T1,
-        ) {
+    fn call(&mut self, resources: &mut AppContext) {
+        fn call_inner<T1>(mut f: impl FnMut(T1), t1: T1) {
             f(t1);
         }
         call_inner(&mut self.f, T1::retrieve(resources));
@@ -65,7 +57,7 @@ where
 
 impl<F, T1: SystemParam> IntoSystem<(T1,)> for F
 where
-    for<'a, 'b> &'a mut F: FnMut(T1) + FnMut(<T1 as SystemParam>::Item<'b>)
+    for<'a, 'b> &'a mut F: FnMut(T1) + FnMut(<T1 as SystemParam>::Item<'b>),
 {
     type System = FunctionSystem<(T1,), Self>;
 
@@ -80,7 +72,7 @@ where
 trait SystemParam {
     type Item<'new>;
 
-    fn retrieve<'r>(resources: &'r mut TypeMap) -> Self::Item<'r>;
+    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
 }
 
 struct Res<'a, T: 'static> {
@@ -96,8 +88,9 @@ impl<'a, T: 'static> Res<'a, T> {
 impl<'res, T: 'static> SystemParam for Res<'res, T> {
     type Item<'new> = Res<'new, T>;
 
-    fn retrieve<'r>(resources: &'r mut TypeMap) -> Self::Item<'r> {
-        let value = resources
+    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+        let value = context
+            .resources
             .get(&TypeId::of::<T>())
             .unwrap()
             .downcast_ref()
@@ -111,9 +104,9 @@ fn foo(number: Res<i32>) {
 }
 
 fn main() {
-    let mut scheduler = App::new();
-    scheduler.add_system(foo);
-    scheduler.add_resource(42i32);
-    scheduler.run();
-    scheduler.run();
+    let mut app = App::new();
+    app.add_system(foo);
+    app.add_resource(42i32);
+    app.run();
+    app.run();
 }
