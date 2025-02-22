@@ -30,46 +30,86 @@ impl<'res> SystemParam for &'res Surface {
     }
 }
 
+pub trait CreateWindowHandler {
+    fn create(surface: &Surface) -> Self
+    where
+        Self: Sized;
+}
+
+pub struct WindowContext {
+    render: StoredSystem,
+}
+
+impl WindowContext {
+    pub fn render<I, S, H>(handler: H) -> Self
+    where
+        I: 'static,
+        S: System + 'static,
+        H: IntoSystem<I, System = S>,
+    {
+        Self {
+            render: Box::new(handler.into_system()),
+        }
+    }
+}
+
+pub fn render<I, S, H>(handler: H) -> WindowContext
+where
+    I: 'static,
+    S: System + 'static,
+    H: IntoSystem<I, System = S>,
+{
+    WindowContext::render(handler)
+}
+
 pub struct AppContext {
     pub surface: Surface,
-    pub resources: TypeMap,
+    windows: HashMap<TypeId, (Box<dyn Any>, WindowContext)>,
 }
 
 impl AppContext {
     pub fn new() -> Self {
         Self {
             surface: Surface {},
-            resources: TypeMap::new(),
+            windows: HashMap::new(),
         }
+    }
+
+    fn register(&mut self, instance: Box<dyn Any>, context: WindowContext) {
+        let state_type_id = (&*instance).type_id();
+        self.windows.insert(state_type_id, (instance, context));
     }
 }
 
 pub struct App {
-    pub systems: Vec<StoredSystem>,
+    pub windows: Vec<WindowContext>,
     pub context: AppContext,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl App {
     pub fn new() -> Self {
         App {
-            systems: Vec::new(),
+            windows: Vec::new(),
             context: AppContext::new(),
         }
     }
 
     pub fn run(&mut self) {
-        for system in self.systems.iter_mut() {
-            system.call(&mut self.context);
-        }
+        // TODO:
+        todo!()
     }
 
-    pub fn add_system<I, S: System + 'static>(&mut self, system: impl IntoSystem<I, System = S>) {
-        self.systems.push(Box::new(system.into_system()));
-    }
-
-    pub fn add_resource<R: 'static>(&mut self, resource: R) {
-        self.context
-            .resources
-            .insert(TypeId::of::<R>(), Box::new(resource));
+    pub fn window<H>(mut self, context: WindowContext) -> Self
+    where
+        H: CreateWindowHandler + 'static
+    {
+        self.windows.push(context);
+        self
     }
 }

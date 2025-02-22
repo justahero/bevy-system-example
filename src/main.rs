@@ -8,9 +8,17 @@ mod app;
 mod param;
 mod system;
 
-use app::{App, AppContext, Surface};
+use app::{App, AppContext, CreateWindowHandler, Surface, render};
 use param::Res;
 use std::{any::TypeId, marker::PhantomData, ops::Deref};
+
+struct MyOne {}
+
+impl CreateWindowHandler for MyOne {
+    fn create(surface: &Surface) -> Self {
+        MyOne {}
+    }
+}
 
 fn foo(number: Res<i32>) {
     println!("Value is {0}", *number);
@@ -25,10 +33,9 @@ fn baz(surface: &Surface) {
 }
 
 fn main() {
-    let mut app = App::new();
-    app.add_system(foo);
-    app.add_system(bar);
-    app.add_system(baz);
-    app.run();
-    app.run();
+    let mut app = App::default()
+        .window::<MyOne>(render(foo))
+        // app.window<()>(bar);
+        // app.window<()>(baz);
+        .run();
 }
