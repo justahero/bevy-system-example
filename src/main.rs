@@ -86,23 +86,23 @@ trait SystemParam {
     fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
 }
 
-trait Resource: 'static {
+trait IntoSystemParam: 'static {
     type Item<'new>;
 
-    fn extract<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r>;
+    fn convert<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r>;
 }
 
-struct Res<'a, T: Resource> {
+struct Res<'a, T: IntoSystemParam> {
     value: &'a T,
 }
 
-impl<'a, T: Resource> Res<'a, T> {
+impl<'a, T: IntoSystemParam> Res<'a, T> {
     pub fn inner(&self) -> &'a T {
         self.value
     }
 }
 
-impl<T: Resource> Deref for Res<'_, T> {
+impl<T: IntoSystemParam> Deref for Res<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -110,30 +110,38 @@ impl<T: Resource> Deref for Res<'_, T> {
     }
 }
 
-impl Resource for i32 {
-    type Item<'new> = i32;
+impl IntoSystemParam for i32 {
+    type Item<'new> = Self;
 
-    fn extract<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
+    fn convert<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
         &0
     }
 }
 
-impl Resource for Surface {
+impl IntoSystemParam for Surface {
     type Item<'new> = Self;
 
-    fn extract<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
+    fn convert<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
+        &context.surface
+    }
+}
+
+impl<'res> SystemParam for &'res Surface {
+    type Item<'new> = &'new Surface;
+
+    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
         &context.surface
     }
 }
 
 impl<'res, T> SystemParam for Res<'res, T>
 where
-    T: for<'a> Resource<Item<'a> = T>,
+    T: for<'a> IntoSystemParam<Item<'a> = T>,
 {
     type Item<'new> = Res<'new, T>;
 
     fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
-        let value = T::extract(context);
+        let value = T::convert(context);
         Res { value: &value }
     }
 }
@@ -143,13 +151,18 @@ fn foo(number: Res<i32>) {
 }
 
 fn bar(surface: Res<Surface>) {
-    println!("Surface called");
+    println!("Surface bar called");
+}
+
+fn baz(surface: &Surface) {
+    println!("Surface baz called");
 }
 
 fn main() {
     let mut app = App::new();
     app.add_system(foo);
     app.add_system(bar);
+    app.add_system(baz);
     app.run();
     app.run();
 }
