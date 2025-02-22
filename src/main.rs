@@ -86,17 +86,23 @@ trait SystemParam {
     fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
 }
 
-struct Res<'a, T: 'static> {
+trait Resource: 'static {
+    type Item<'new>;
+
+    fn extract<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r>;
+}
+
+struct Res<'a, T: Resource> {
     value: &'a T,
 }
 
-impl<'a, T: 'static> Res<'a, T> {
+impl<'a, T: Resource> Res<'a, T> {
     pub fn inner(&self) -> &'a T {
         self.value
     }
 }
 
-impl<T: 'static> Deref for Res<'_, T> {
+impl<T: Resource> Deref for Res<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -104,41 +110,39 @@ impl<T: 'static> Deref for Res<'_, T> {
     }
 }
 
-impl SystemParam for i32 {
+impl Resource for i32 {
     type Item<'new> = i32;
 
-    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
-        0
+    fn extract<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
+        &0
     }
 }
 
-impl<'res> SystemParam for &'res Surface {
-    type Item<'new> = &'new Surface;
+impl Resource for Surface {
+    type Item<'new> = Self;
 
-    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+    fn extract<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
         &context.surface
     }
 }
 
-impl<'res, T: 'static> SystemParam for Res<'res, T> {
+impl<'res, T> SystemParam for Res<'res, T>
+where
+    T: for<'a> Resource<Item<'a> = T>,
+{
     type Item<'new> = Res<'new, T>;
 
     fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
-        let value = context
-            .resources
-            .get(&TypeId::of::<T>())
-            .unwrap()
-            .downcast_ref()
-            .unwrap();
-        Res { value }
+        let value = T::extract(context);
+        Res { value: &value }
     }
 }
 
-fn foo(number: i32) {
-    println!("Value is {0}", number);
+fn foo(number: Res<i32>) {
+    println!("Value is {0}", *number);
 }
 
-fn bar(surface: &Surface) {
+fn bar(surface: Res<Surface>) {
     println!("Surface called");
 }
 
