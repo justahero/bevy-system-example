@@ -70,14 +70,6 @@ where
     }
 }
 
-impl SystemParam for Surface {
-    type Item<'new> = &'new Self;
-
-    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
-        &context.surface
-    }
-}
-
 /// Trait to extract some `Item` from the `AppContext` for some implementation, e.g. Surface.
 trait SystemParam {
     /// Associated type `Item` is declared here to allow to re-assign the lifetime of `Self`.
@@ -97,6 +89,10 @@ struct Res<'a, T: IntoSystemParam> {
 }
 
 impl<'a, T: IntoSystemParam> Res<'a, T> {
+    pub fn new(value: &'a T) -> Self {
+        Self { value }
+    }
+
     pub fn inner(&self) -> &'a T {
         self.value
     }
@@ -141,8 +137,7 @@ where
     type Item<'new> = Res<'new, T>;
 
     fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
-        let value = T::convert(context);
-        Res { value: &value }
+        Res::new(T::convert(context))
     }
 }
 
