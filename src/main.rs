@@ -78,13 +78,6 @@ impl SystemParam for Surface {
     }
 }
 
-/// Converts a T into SystemParam.
-trait IntoSystemParam {
-    type Param<'new>: SystemParam;
-
-    fn cast<'r>(context: &'r mut AppContext) -> Self::Param<'r>;
-}
-
 /// Trait to extract some `Item` from the `AppContext` for some implementation, e.g. Surface.
 trait SystemParam {
     /// Associated type `Item` is declared here to allow to re-assign the lifetime of `Self`.
@@ -111,6 +104,22 @@ impl<T: 'static> Deref for Res<'_, T> {
     }
 }
 
+impl SystemParam for i32 {
+    type Item<'new> = i32;
+
+    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+        0
+    }
+}
+
+impl<'res> SystemParam for &'res Surface {
+    type Item<'new> = &'new Surface;
+
+    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+        &context.surface
+    }
+}
+
 impl<'res, T: 'static> SystemParam for Res<'res, T> {
     type Item<'new> = Res<'new, T>;
 
@@ -125,8 +134,8 @@ impl<'res, T: 'static> SystemParam for Res<'res, T> {
     }
 }
 
-fn foo(number: Res<i32>) {
-    println!("Value is {0}", *number);
+fn foo(number: i32) {
+    println!("Value is {0}", number);
 }
 
 fn bar(surface: &Surface) {
@@ -136,8 +145,7 @@ fn bar(surface: &Surface) {
 fn main() {
     let mut app = App::new();
     app.add_system(foo);
-    // app.add_system(bar);
-    app.add_resource(42i32);
+    app.add_system(bar);
     app.run();
     app.run();
 }
