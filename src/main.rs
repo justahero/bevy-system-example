@@ -52,7 +52,7 @@ where
         fn call_inner<T1>(mut f: impl FnMut(T1), t1: T1) {
             f(t1);
         }
-        call_inner(&mut self.f, T1::retrieve(resources));
+        call_inner(&mut self.f, T1::extract(resources));
     }
 }
 
@@ -71,9 +71,9 @@ where
 }
 
 impl SystemParam for Surface {
-    type Item<'new> = &'new Surface;
+    type Item<'new> = &'new Self;
 
-    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
         &context.surface
     }
 }
@@ -85,12 +85,12 @@ trait IntoSystemParam {
     fn cast<'r>(context: &'r mut AppContext) -> Self::Param<'r>;
 }
 
-/// TODO: Offer a conversion into SystemParam that implements the multiple different lookups.
-/// e.g. Surface & Res<T>,
+/// Trait to extract some `Item` from the `AppContext` for some implementation, e.g. Surface.
 trait SystemParam {
+    /// Associated type `Item` is declared here to allow to re-assign the lifetime of `Self`.
     type Item<'new>;
 
-    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
+    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
 }
 
 struct Res<'a, T: 'static> {
@@ -114,7 +114,7 @@ impl<T: 'static> Deref for Res<'_, T> {
 impl<'res, T: 'static> SystemParam for Res<'res, T> {
     type Item<'new> = Res<'new, T>;
 
-    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
         let value = context
             .resources
             .get(&TypeId::of::<T>())
@@ -129,9 +129,14 @@ fn foo(number: Res<i32>) {
     println!("Value is {0}", *number);
 }
 
+fn bar(surface: &Surface) {
+    println!("Surface called");
+}
+
 fn main() {
     let mut app = App::new();
     app.add_system(foo);
+    // app.add_system(bar);
     app.add_resource(42i32);
     app.run();
     app.run();
