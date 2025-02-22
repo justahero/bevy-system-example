@@ -3,13 +3,32 @@ use std::{
     collections::HashMap,
 };
 
-use crate::{IntoSystem, System};
+use crate::{
+    param::{IntoSystemParam, SystemParam},
+    system::{IntoSystem, System},
+};
 
 pub type TypeMap = HashMap<TypeId, Box<dyn Any>>;
 
 pub type StoredSystem = Box<dyn System>;
 
 pub struct Surface {}
+
+impl IntoSystemParam for Surface {
+    type Item<'new> = Self;
+
+    fn convert<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
+        &context.surface
+    }
+}
+
+impl<'res> SystemParam for &'res Surface {
+    type Item<'new> = &'new Surface;
+
+    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+        &context.surface
+    }
+}
 
 pub struct AppContext {
     pub surface: Surface,
@@ -49,6 +68,8 @@ impl App {
     }
 
     pub fn add_resource<R: 'static>(&mut self, resource: R) {
-        self.context.resources.insert(TypeId::of::<R>(), Box::new(resource));
+        self.context
+            .resources
+            .insert(TypeId::of::<R>(), Box::new(resource));
     }
 }
