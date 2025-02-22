@@ -70,8 +70,19 @@ where
     }
 }
 
-trait IntoSystemParam: 'static {
-    fn cast<'r>(context: &'r mut AppContext) -> &'r Self;
+impl SystemParam for Surface {
+    type Item<'new> = &'new Surface;
+
+    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+        &context.surface
+    }
+}
+
+/// Converts a T into SystemParam.
+trait IntoSystemParam {
+    type Param<'new>: SystemParam;
+
+    fn cast<'r>(context: &'r mut AppContext) -> Self::Param<'r>;
 }
 
 /// TODO: Offer a conversion into SystemParam that implements the multiple different lookups.
@@ -80,14 +91,6 @@ trait SystemParam {
     type Item<'new>;
 
     fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
-}
-
-impl<T: IntoSystemParam> SystemParam for T {
-    type Item<'new> = &'new T;
-
-    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
-        T::cast(context)
-    }
 }
 
 struct Res<'a, T: 'static> {
