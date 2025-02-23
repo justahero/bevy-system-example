@@ -32,7 +32,7 @@ pub trait SystemParam {
 pub trait IntoSystemParam: 'static {
     type Item<'new>;
 
-    fn convert<'r>(context: &'r WindowContext) -> Ref<'r, Self::Item<'r>>;
+    fn convert<'r>(context: &'r WindowContext) -> &'r RefCell<Self::Item<'r>>;
 }
 
 impl<'res, T> SystemParam for Res<'res, T>
@@ -42,6 +42,6 @@ where
     type Item<'new> = Res<'new, T>;
 
     fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
-        Res::new(T::convert(context))
+        Res::new(T::convert(context).borrow())
     }
 }

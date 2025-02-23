@@ -19,8 +19,8 @@ pub struct Surface {}
 impl IntoSystemParam for Surface {
     type Item<'new> = Self;
 
-    fn convert<'r>(context: &'r WindowContext) -> Ref<'r, Self::Item<'r>> {
-        context.surface.borrow()
+    fn convert<'r>(context: &'r WindowContext) -> &'r RefCell<Self::Item<'r>> {
+        &context.surface
     }
 }
 
