@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::app::AppContext;
+use crate::app::WindowContext;
 
 pub struct Res<'a, T: IntoSystemParam> {
     value: &'a T,
@@ -14,18 +14,18 @@ impl<T: IntoSystemParam> Deref for Res<'_, T> {
     }
 }
 
-/// Trait to extract some `Item` from the `AppContext` for some implementation, e.g. Surface.
+/// Trait to extract some `Item` from the `WindowContext` for some implementation, e.g. Surface.
 pub trait SystemParam {
     /// Associated type `Item` is declared here to allow to re-assign the lifetime of `Self`.
     type Item<'new>;
 
-    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
+    fn extract<'r>(context: &'r mut WindowContext) -> Self::Item<'r>;
 }
 
 pub trait IntoSystemParam: 'static {
     type Item<'new>;
 
-    fn convert<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r>;
+    fn convert<'r>(context: &'r mut WindowContext) -> &'r Self::Item<'r>;
 }
 
 impl<'a, T: IntoSystemParam> Res<'a, T> {
@@ -41,7 +41,7 @@ impl<'a, T: IntoSystemParam> Res<'a, T> {
 impl IntoSystemParam for i32 {
     type Item<'new> = Self;
 
-    fn convert<'r>(context: &'r mut AppContext) -> &'r Self::Item<'r> {
+    fn convert<'r>(context: &'r mut WindowContext) -> &'r Self::Item<'r> {
         &0
     }
 }
@@ -52,7 +52,7 @@ where
 {
     type Item<'new> = Res<'new, T>;
 
-    fn extract<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
+    fn extract<'r>(context: &'r mut WindowContext) -> Self::Item<'r> {
         Res::new(T::convert(context))
     }
 }
