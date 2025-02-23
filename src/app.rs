@@ -36,12 +36,11 @@ pub trait CreateWindowHandler {
         Self: Sized;
 }
 
-pub struct WindowContext {
-    surface: Surface,
+pub struct WindowHandlers {
     render: StoredSystem,
 }
 
-impl WindowContext {
+impl WindowHandlers {
     pub fn render<I, S, H>(handler: H) -> Self
     where
         I: 'static,
@@ -49,23 +48,44 @@ impl WindowContext {
         H: IntoSystem<I, System = S>,
     {
         Self {
-            surface: Surface {},
             render: Box::new(handler.into_system()),
         }
     }
 }
 
-pub fn render<I, S, H>(handler: H) -> WindowContext
+pub struct WindowContext {
+    /// The state instance associated with the window
+    state: Box<dyn Any>,
+    /// The associated surface to "render" into.
+    surface: Surface,
+}
+
+impl WindowContext {
+    pub fn new(state: Box<dyn Any>) -> Self {
+        Self {
+            state,
+            surface: Surface {},
+        }
+    }
+
+    pub fn state_type_id(&self) -> TypeId {
+        (&*self.state).type_id()
+    }
+}
+
+pub fn render<I, S, H>(handler: H) -> WindowHandlers
 where
     I: 'static,
     S: System + 'static,
     H: IntoSystem<I, System = S>,
 {
-    WindowContext::render(handler)
+    WindowHandlers::render(handler)
 }
 
+/// Collects all application wide fields and windows.
 pub struct AppContext {
-    windows: HashMap<TypeId, (Box<dyn Any>, WindowContext)>,
+    /// The list of all windows
+    windows: HashMap<TypeId, (WindowContext, WindowHandlers)>,
 }
 
 impl AppContext {
@@ -75,16 +95,18 @@ impl AppContext {
         }
     }
 
-    fn register(&mut self, instance: Box<dyn Any>, context: WindowContext) {
-        let state_type_id = (&*instance).type_id();
-        self.windows.insert(state_type_id, (instance, context));
+    fn register(&mut self, state: Box<dyn Any>, handlers: WindowHandlers) {
+        let context = WindowContext::new(state);
+        let state_type_id = context.state_type_id();
+
+        self.windows.insert(state_type_id, (context, handlers));
     }
 }
 
 type WindowCreateFn = Box<dyn for<'window> Fn(&Surface) -> Box<dyn Any>>;
 
 pub struct App {
-    pub windows: Vec<(WindowCreateFn, WindowContext)>,
+    pub windows: Vec<(WindowCreateFn, WindowHandlers)>,
     pub context: AppContext,
 }
 
@@ -102,15 +124,15 @@ impl App {
         }
     }
 
-    pub fn window<H>(mut self, context: WindowContext) -> Self
+    pub fn window<H>(mut self, handlers: WindowHandlers) -> Self
     where
-    H: CreateWindowHandler + 'static
+        H: CreateWindowHandler + 'static,
     {
         let window_create_fn = Box::new(|surface: &Surface| {
             let state = H::create(surface);
             Box::new(state) as Box<dyn Any>
         });
-        self.windows.push((window_create_fn, context));
+        self.windows.push((window_create_fn, handlers));
         self
     }
 
