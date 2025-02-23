@@ -20,22 +20,12 @@ impl CreateWindowHandler for MyOne {
     }
 }
 
-fn foo(number: Res<i32>) {
-    println!("Value is {0}", *number);
-}
-
-fn bar(surface: Res<Surface>) {
+fn foo(surface: Res<Surface>) {
     println!("Surface bar called");
-}
-
-fn baz(surface: &Surface) {
-    println!("Surface baz called");
 }
 
 fn main() {
     let mut app = App::default()
         .window::<MyOne>(render(foo))
-        // app.window<()>(bar);
-        // app.window<()>(baz);
         .run();
 }

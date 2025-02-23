@@ -1,6 +1,8 @@
 use std::{
     any::{Any, TypeId},
+    cell::{Ref, RefCell},
     collections::HashMap,
+    ops::Deref,
 };
 
 use crate::{
@@ -17,16 +19,8 @@ pub struct Surface {}
 impl IntoSystemParam for Surface {
     type Item<'new> = Self;
 
-    fn convert<'r>(context: &'r WindowContext) -> &'r Self::Item<'r> {
-        &context.surface
-    }
-}
-
-impl<'res> SystemParam for &'res Surface {
-    type Item<'new> = &'new Surface;
-
-    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
-        &context.surface
+    fn convert<'r>(context: &'r WindowContext) -> Ref<'r, Self::Item<'r>> {
+        context.surface.borrow()
     }
 }
 
@@ -55,21 +49,17 @@ impl WindowHandlers {
 
 pub struct WindowContext {
     /// The state instance associated with the window
-    state: Box<dyn Any>,
+    state: RefCell<Box<dyn Any>>,
     /// The associated surface to "render" into.
-    surface: Surface,
+    surface: RefCell<Surface>,
 }
 
 impl WindowContext {
     pub fn new(state: Box<dyn Any>) -> Self {
         Self {
-            state,
-            surface: Surface {},
+            state: RefCell::new(state),
+            surface: RefCell::new(Surface {}),
         }
-    }
-
-    pub fn state_type_id(&self) -> TypeId {
-        (&*self.state).type_id()
     }
 }
 
@@ -96,8 +86,8 @@ impl AppContext {
     }
 
     fn register(&mut self, state: Box<dyn Any>, handlers: WindowHandlers) {
+        let state_type_id = state.type_id();
         let context = WindowContext::new(state);
-        let state_type_id = context.state_type_id();
 
         self.windows.insert(state_type_id, (context, handlers));
     }

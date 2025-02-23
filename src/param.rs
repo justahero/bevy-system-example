@@ -1,16 +1,23 @@
-use std::ops::Deref;
+use std::{
+    any::Any,
+    cell::{Ref, RefCell},
+    marker::PhantomData,
+    ops::Deref,
+};
 
 use crate::app::WindowContext;
 
 pub struct Res<'a, T: IntoSystemParam> {
-    value: &'a T,
+    value: Ref<'a, T>,
+    _marker: PhantomData<&'a T>,
 }
 
-impl<T: IntoSystemParam> Deref for Res<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        self.value
+impl<'a, T: IntoSystemParam> Res<'a, T> {
+    pub fn new(value: Ref<'a, T>) -> Self {
+        Self {
+            value,
+            _marker: PhantomData::default(),
+        }
     }
 }
 
@@ -25,25 +32,7 @@ pub trait SystemParam {
 pub trait IntoSystemParam: 'static {
     type Item<'new>;
 
-    fn convert<'r>(context: &'r WindowContext) -> &'r Self::Item<'r>;
-}
-
-impl<'a, T: IntoSystemParam> Res<'a, T> {
-    pub fn new(value: &'a T) -> Self {
-        Self { value }
-    }
-
-    pub fn inner(&self) -> &'a T {
-        self.value
-    }
-}
-
-impl IntoSystemParam for i32 {
-    type Item<'new> = Self;
-
-    fn convert<'r>(context: &'r WindowContext) -> &'r Self::Item<'r> {
-        &0
-    }
+    fn convert<'r>(context: &'r WindowContext) -> Ref<'r, Self::Item<'r>>;
 }
 
 impl<'res, T> SystemParam for Res<'res, T>
