@@ -17,7 +17,7 @@ pub struct Surface {}
 impl IntoSystemParam for Surface {
     type Item<'new> = Self;
 
-    fn convert<'r>(context: &'r mut WindowContext) -> &'r Self::Item<'r> {
+    fn convert<'r>(context: &'r WindowContext) -> &'r Self::Item<'r> {
         &context.surface
     }
 }
@@ -25,7 +25,7 @@ impl IntoSystemParam for Surface {
 impl<'res> SystemParam for &'res Surface {
     type Item<'new> = &'new Surface;
 
-    fn extract<'r>(context: &'r mut WindowContext) -> Self::Item<'r> {
+    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
         &context.surface
     }
 }
