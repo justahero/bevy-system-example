@@ -81,8 +81,10 @@ impl AppContext {
     }
 }
 
+type WindowCreateFn = Box<dyn for<'window> Fn(&Surface) -> Box<dyn Any>>;
+
 pub struct App {
-    pub windows: Vec<WindowContext>,
+    pub windows: Vec<(WindowCreateFn, WindowContext)>,
     pub context: AppContext,
 }
 
@@ -100,16 +102,19 @@ impl App {
         }
     }
 
-    pub fn run(&mut self) {
-        // TODO:
-        todo!()
-    }
-
     pub fn window<H>(mut self, context: WindowContext) -> Self
     where
-        H: CreateWindowHandler + 'static
+    H: CreateWindowHandler + 'static
     {
-        self.windows.push(context);
+        let window_create_fn = Box::new(|surface: &Surface| {
+            let state = H::create(surface);
+            Box::new(state) as Box<dyn Any>
+        });
+        self.windows.push((window_create_fn, context));
         self
+    }
+
+    pub fn run(&mut self) {
+        todo!()
     }
 }
