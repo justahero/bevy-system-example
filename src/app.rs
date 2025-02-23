@@ -136,7 +136,18 @@ impl App {
         self
     }
 
-    pub fn run(&mut self) {
-        todo!()
+    /// Run and consume the app.
+    pub fn run(mut self) {
+        // Create all windows with their state.
+        for (create_fn, handlers) in self.windows.into_iter() {
+            let surface = Surface {};
+            let state = create_fn(&surface);
+            self.context.register(state, handlers);
+        }
+
+        // Call all render functions for each window.
+        for (_state_type_id, (context, handlers)) in self.context.windows.iter_mut() {
+            handlers.render.call(context);
+        }
     }
 }
