@@ -58,10 +58,10 @@ macro_rules! impl_into_system {
     ) => {
         #[allow(unused_parens)]
         impl<F, $($params: SystemParam),*> IntoSystem<($($params),*)> for F
-            where
-                for <'a, 'b> &'a mut F:
-                    FnMut($($params),*) +
-                    FnMut($(<$params as SystemParam>::Item<'b>),*)
+        where
+            for <'a, 'b> &'a mut F:
+                FnMut($($params),*) +
+                FnMut($(<$params as SystemParam>::Item<'b>),*)
         {
             type System = FunctionSystem<($($params),*), Self>;
 

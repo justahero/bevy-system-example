@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+#![allow(dead_code)]
+
 /// Reference: https://github.com/PROMETHIA-27/dependency_injection_like_bevy_from_scratch/blob/main/src/chapter2/src/more_params.rs
 mod app;
 mod param;
@@ -32,7 +35,7 @@ fn foo(_surface: ResMut<Surface>, one: State<MyOne>) {
     println!("Function foo called with surface and state: {:?}", *one);
 }
 
-fn bar(title: Title, two: State<MyTwo>, another: State<MyTwo>) {
+fn bar(title: Title, two: State<MyTwo>) {
     println!(
         "Function bar called with title: {:?} with value: {:?}",
         title, *two

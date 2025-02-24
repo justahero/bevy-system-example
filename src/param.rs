@@ -97,13 +97,19 @@ impl<'res, T: 'static> SystemParam for State<'res, T> {
     type Item<'new> = State<'new, T>;
 
     fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
+        let expected_type_name = core::any::type_name::<T>();
+
+        // Check that the State object is not already borrowed mutably
+        if let Err(_) = context.state().try_borrow_mut() {
+            panic!("State '{}' is already exclusively (mutably) borrowed!", expected_type_name);
+        }
+
         // Check that the internal state can actually be casted into the target type T.
         {
             let borrow = context.state().borrow();
             match borrow.downcast_ref::<T>() {
                 Some(_) => {},
                 None => {
-                    let expected_type_name = core::any::type_name::<T>();
                     panic!("Failed to cast state to '{}'", expected_type_name);
                 },
             }
