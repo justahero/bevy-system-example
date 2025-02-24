@@ -53,11 +53,20 @@ impl WindowHandlers {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Title(pub String);
 
 impl Title {
     pub fn new(title: &str) -> Self {
         Self(title.to_string())
+    }
+}
+
+impl SystemParam for Title {
+    type Item<'new> = Title;
+
+    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
+        context.title.clone()
     }
 }
 

@@ -8,7 +8,7 @@ mod app;
 mod param;
 mod system;
 
-use app::{App, AppContext, CreateWindowHandler, Surface, render};
+use app::{App, AppContext, CreateWindowHandler, Surface, Title, render};
 use param::{Res, ResMut, State};
 use std::{any::TypeId, marker::PhantomData, ops::Deref};
 
@@ -37,8 +37,8 @@ fn foo(surface: ResMut<Surface>, one: State<MyOne>) {
     println!("Function foo called with surface and state: {:?}", *one);
 }
 
-fn bar() {
-    println!("Function bar called");
+fn bar(title: Title) {
+    println!("Function bar called with title: {:?}", title);
 }
 
 fn main() {
