@@ -8,16 +8,24 @@ use std::{
 use crate::app::WindowContext;
 
 pub struct State<'a, T> {
-    value: RefMut<'a, T>,
+    value: RefMut<'a, Box<dyn Any>>,
     _marker: PhantomData<&'a mut T>,
 }
 
 impl<'a, T> State<'a, T> {
-    pub fn new(value: RefMut<'a, T>) -> Self {
+    pub fn new(value: RefMut<'a, Box<dyn Any>>) -> Self {
         Self {
             value,
             _marker: PhantomData::default(),
         }
+    }
+}
+
+impl<T: 'static> Deref for State<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.value.downcast_ref().expect("Failed to cast state.")
     }
 }
 
@@ -64,6 +72,6 @@ impl<'res, T: 'static> SystemParam for State<'res, T> {
     type Item<'new> = State<'new, T>;
 
     fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
-        todo!("")
+        State::new(context.state().borrow_mut())
     }
 }

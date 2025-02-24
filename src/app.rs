@@ -30,6 +30,12 @@ pub trait CreateWindowHandler {
         Self: Sized;
 }
 
+impl CreateWindowHandler for () {
+    fn create(surface: &Surface) -> Self {
+        ()
+    }
+}
+
 pub struct WindowHandlers {
     render: StoredSystem,
 }

@@ -12,20 +12,39 @@ use app::{App, AppContext, CreateWindowHandler, Surface, render};
 use param::{Res, State};
 use std::{any::TypeId, marker::PhantomData, ops::Deref};
 
-struct MyOne {}
+#[derive(Debug)]
+struct MyOne {
+    title: String,
+}
 
 impl CreateWindowHandler for MyOne {
     fn create(surface: &Surface) -> Self {
-        MyOne {}
+        MyOne {
+            title: "Hello World".to_string(),
+        }
+    }
+}
+
+struct MyTwo;
+
+impl CreateWindowHandler for MyTwo {
+    fn create(surface: &Surface) -> Self {
+        MyTwo {}
     }
 }
 
 fn foo(surface: Res<Surface>, one: State<MyOne>) {
-    println!("Surface bar called");
+    println!("Function foo called with surface and state: {:?}", *one);
+}
+
+fn bar() {
+    println!("Function bar called");
 }
 
 fn main() {
     let mut app = App::default()
         .window::<MyOne>(render(foo))
+        .window::<MyTwo>(render(bar))
+        .window::<()>(render(bar))
         .run();
 }
