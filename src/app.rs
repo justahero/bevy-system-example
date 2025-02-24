@@ -97,9 +97,8 @@ impl AppContext {
     }
 
     fn register(&mut self, state: Box<dyn Any>, handlers: WindowHandlers) {
-        let state_type_id = state.type_id();
+        let state_type_id = (&*state).type_id();
         let context = WindowContext::new(state);
-
         self.windows.insert(state_type_id, (context, handlers));
     }
 }
