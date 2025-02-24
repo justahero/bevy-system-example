@@ -3,9 +3,8 @@ mod app;
 mod param;
 mod system;
 
-use app::{App, AppContext, CreateWindowHandler, Surface, Title, render};
-use param::{Res, ResMut, State};
-use std::{any::TypeId, marker::PhantomData, ops::Deref};
+use app::{App, CreateWindowHandler, Surface, Title, render};
+use param::{ResMut, State};
 
 #[derive(Debug)]
 struct MyOne {
@@ -13,7 +12,7 @@ struct MyOne {
 }
 
 impl CreateWindowHandler for MyOne {
-    fn create(surface: &Surface) -> Self {
+    fn create(_surface: &Surface) -> Self {
         MyOne {
             title: "Hello World".to_string(),
         }
@@ -24,23 +23,30 @@ impl CreateWindowHandler for MyOne {
 struct MyTwo(pub i32);
 
 impl CreateWindowHandler for MyTwo {
-    fn create(surface: &Surface) -> Self {
+    fn create(_surface: &Surface) -> Self {
         MyTwo(42)
     }
 }
 
-fn foo(surface: ResMut<Surface>, one: State<MyOne>) {
+fn foo(_surface: ResMut<Surface>, one: State<MyOne>) {
     println!("Function foo called with surface and state: {:?}", *one);
 }
 
-fn bar(title: Title, two: State<MyTwo>) {
-    println!("Function bar called with title: {:?} with value: {:?}", title, *two);
+fn bar(title: Title, two: State<MyTwo>, another: State<MyTwo>) {
+    println!(
+        "Function bar called with title: {:?} with value: {:?}",
+        title, *two
+    );
+}
+
+fn bla() {
+    println!("Function bla called");
 }
 
 fn main() {
     App::default()
         .window::<MyOne>(render(foo))
         .window::<MyTwo>(render(bar))
-        .window::<()>(render(bar))
+        .window::<()>(render(bla))
         .run();
 }

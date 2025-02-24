@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{Res, app::WindowContext, param::SystemParam};
+use crate::{app::WindowContext, param::SystemParam};
 
 pub struct FunctionSystem<Input, F> {
     f: F,
@@ -65,7 +65,8 @@ where
 
 impl<F, T1: SystemParam, T2: SystemParam> System for FunctionSystem<(T1, T2), F>
 where
-    for<'a, 'b> &'a mut F: FnMut(T1, T2) + FnMut(<T1 as SystemParam>::Item<'b>, <T2 as SystemParam>::Item<'b>),
+    for<'a, 'b> &'a mut F:
+        FnMut(T1, T2) + FnMut(<T1 as SystemParam>::Item<'b>, <T2 as SystemParam>::Item<'b>),
 {
     fn call(&mut self, context: &mut WindowContext) {
         fn call_inner<T1, T2>(mut f: impl FnMut(T1, T2), t1: T1, t2: T2) {
@@ -80,7 +81,8 @@ where
 
 impl<F, T1: SystemParam, T2: SystemParam> IntoSystem<(T1, T2)> for F
 where
-    for<'a, 'b> &'a mut F: FnMut(T1, T2) + FnMut(<T1 as SystemParam>::Item<'b>, <T2 as SystemParam>::Item<'b>),
+    for<'a, 'b> &'a mut F:
+        FnMut(T1, T2) + FnMut(<T1 as SystemParam>::Item<'b>, <T2 as SystemParam>::Item<'b>),
 {
     type System = FunctionSystem<(T1, T2), Self>;
 

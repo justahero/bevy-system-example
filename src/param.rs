@@ -97,6 +97,18 @@ impl<'res, T: 'static> SystemParam for State<'res, T> {
     type Item<'new> = State<'new, T>;
 
     fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
+        // Check that the internal state can actually be casted into the target type T.
+        {
+            let borrow = context.state().borrow();
+            match borrow.downcast_ref::<T>() {
+                Some(_) => {},
+                None => {
+                    let expected_type_name = core::any::type_name::<T>();
+                    panic!("Failed to cast state to '{}'", expected_type_name);
+                },
+            }
+        }
+
         State::new(context.state().borrow_mut())
     }
 }

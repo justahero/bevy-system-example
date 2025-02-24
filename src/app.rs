@@ -1,12 +1,11 @@
 use std::{
     any::{Any, TypeId},
-    cell::{Ref, RefCell, RefMut},
+    cell::RefCell,
     collections::HashMap,
-    ops::Deref,
 };
 
 use crate::{
-    param::{IntoSystemParam, State, SystemParam},
+    param::{IntoSystemParam, SystemParam},
     system::{IntoSystem, System},
 };
 
@@ -31,7 +30,7 @@ pub trait CreateWindowHandler {
 }
 
 impl CreateWindowHandler for () {
-    fn create(surface: &Surface) -> Self {
+    fn create(_surface: &Surface) -> Self {
         ()
     }
 }
