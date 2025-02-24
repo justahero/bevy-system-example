@@ -9,8 +9,6 @@ use crate::{
     system::{IntoSystem, System},
 };
 
-pub type TypeMap = HashMap<TypeId, Box<dyn Any>>;
-
 pub type StoredSystem = Box<dyn System>;
 
 pub struct Surface {}

@@ -17,79 +17,65 @@ pub trait IntoSystem<Input> {
     fn into_system(self) -> Self::System;
 }
 
-impl<F: FnMut()> System for FunctionSystem<(), F> {
-    fn call(&mut self, _context: &mut WindowContext) {
-        (self.f)()
-    }
-}
+macro_rules! impl_system {
+    (
+        $($params:ident),*
+    ) => {
+        #[allow(non_snake_case)]
+        #[allow(unused)]
+        impl<F, $($params: SystemParam),*> System for FunctionSystem<($($params),*), F>
+        where
+            for <'a, 'b> &'a mut F:
+                FnMut($($params),*) +
+                FnMut($(<$params as SystemParam>::Item<'b>),*)
+        {
+            fn call(&mut self, context: &mut WindowContext) {
+                fn call_inner<$($params),*>(
+                    mut f: impl FnMut($($params),*),
+                    $($params: $params),*
+                ) {
+                    f($($params),*)
+                }
 
-impl<F: FnMut()> IntoSystem<()> for F
-where
-    for<'a, 'b> &'a mut F: FnMut(),
-{
-    type System = FunctionSystem<(), Self>;
+                $(
+                    let $params = $params::extract(context);
+                )*
 
-    fn into_system(self) -> Self::System {
-        FunctionSystem {
-            f: self,
-            marker: Default::default(),
+                call_inner(&mut self.f, $($params),*)
+            }
         }
-    }
+    };
 }
 
-impl<F, T1: SystemParam> System for FunctionSystem<(T1,), F>
-where
-    for<'a, 'b> &'a mut F: FnMut(T1) + FnMut(<T1 as SystemParam>::Item<'b>),
-{
-    fn call(&mut self, context: &mut WindowContext) {
-        fn call_inner<T1>(mut f: impl FnMut(T1), t1: T1) {
-            f(t1);
+impl_system!();
+impl_system!(T1);
+impl_system!(T1, T2);
+impl_system!(T1, T2, T3);
+
+macro_rules! impl_into_system {
+    (
+        $($params:ident),*
+    ) => {
+        #[allow(unused_parens)]
+        impl<F, $($params: SystemParam),*> IntoSystem<($($params),*)> for F
+            where
+                for <'a, 'b> &'a mut F:
+                    FnMut($($params),*) +
+                    FnMut($(<$params as SystemParam>::Item<'b>),*)
+        {
+            type System = FunctionSystem<($($params),*), Self>;
+
+            fn into_system(self) -> Self::System {
+                FunctionSystem {
+                    f: self,
+                    marker: Default::default(),
+                }
+            }
         }
-        call_inner(&mut self.f, T1::extract(context));
-    }
+    };
 }
 
-impl<F, T1: SystemParam> IntoSystem<(T1,)> for F
-where
-    for<'a, 'b> &'a mut F: FnMut(T1) + FnMut(<T1 as SystemParam>::Item<'b>),
-{
-    type System = FunctionSystem<(T1,), Self>;
-
-    fn into_system(self) -> Self::System {
-        FunctionSystem {
-            f: self,
-            marker: Default::default(),
-        }
-    }
-}
-
-impl<F, T1: SystemParam, T2: SystemParam> System for FunctionSystem<(T1, T2), F>
-where
-    for<'a, 'b> &'a mut F:
-        FnMut(T1, T2) + FnMut(<T1 as SystemParam>::Item<'b>, <T2 as SystemParam>::Item<'b>),
-{
-    fn call(&mut self, context: &mut WindowContext) {
-        fn call_inner<T1, T2>(mut f: impl FnMut(T1, T2), t1: T1, t2: T2) {
-            f(t1, t2);
-        }
-
-        let t1 = T1::extract(context);
-        let t2 = T2::extract(context);
-        call_inner(&mut self.f, t1, t2);
-    }
-}
-
-impl<F, T1: SystemParam, T2: SystemParam> IntoSystem<(T1, T2)> for F
-where
-    for<'a, 'b> &'a mut F:
-        FnMut(T1, T2) + FnMut(<T1 as SystemParam>::Item<'b>, <T2 as SystemParam>::Item<'b>),
-{
-    type System = FunctionSystem<(T1, T2), Self>;
-
-    fn into_system(self) -> Self::System {
-        FunctionSystem {
-            f: self,
-            marker: Default::default(),
-        }
-    }
-}
+impl_into_system!();
+impl_into_system!(T1);
+impl_into_system!(T1, T2);
+impl_into_system!(T1, T2, T3);
