@@ -53,7 +53,17 @@ impl WindowHandlers {
     }
 }
 
+pub struct Title(pub String);
+
+impl Title {
+    pub fn new(title: &str) -> Self {
+        Self(title.to_string())
+    }
+}
+
 pub struct WindowContext {
+    /// The window title.
+    title: Title,
     /// The state instance associated with the window
     state: RefCell<Box<dyn Any>>,
     /// The associated surface to "render" into.
@@ -63,6 +73,7 @@ pub struct WindowContext {
 impl WindowContext {
     pub fn new(state: Box<dyn Any>) -> Self {
         Self {
+            title: Title::new("Window"),
             state: RefCell::new(state),
             surface: RefCell::new(Surface {}),
         }

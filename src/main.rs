@@ -9,7 +9,7 @@ mod param;
 mod system;
 
 use app::{App, AppContext, CreateWindowHandler, Surface, render};
-use param::{Res, State};
+use param::{Res, ResMut, State};
 use std::{any::TypeId, marker::PhantomData, ops::Deref};
 
 #[derive(Debug)]
@@ -33,7 +33,7 @@ impl CreateWindowHandler for MyTwo {
     }
 }
 
-fn foo(surface: Res<Surface>, one: State<MyOne>) {
+fn foo(surface: ResMut<Surface>, one: State<MyOne>) {
     println!("Function foo called with surface and state: {:?}", *one);
 }
 
