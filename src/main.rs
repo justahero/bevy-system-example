@@ -1,8 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_mut)]
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-
 /// Reference: https://github.com/PROMETHIA-27/dependency_injection_like_bevy_from_scratch/blob/main/src/chapter2/src/more_params.rs
 mod app;
 mod param;
@@ -25,11 +20,12 @@ impl CreateWindowHandler for MyOne {
     }
 }
 
-struct MyTwo;
+#[derive(Debug)]
+struct MyTwo(pub i32);
 
 impl CreateWindowHandler for MyTwo {
     fn create(surface: &Surface) -> Self {
-        MyTwo {}
+        MyTwo(42)
     }
 }
 
@@ -37,12 +33,12 @@ fn foo(surface: ResMut<Surface>, one: State<MyOne>) {
     println!("Function foo called with surface and state: {:?}", *one);
 }
 
-fn bar(title: Title) {
-    println!("Function bar called with title: {:?}", title);
+fn bar(title: Title, two: State<MyTwo>) {
+    println!("Function bar called with title: {:?} with value: {:?}", title, *two);
 }
 
 fn main() {
-    let mut app = App::default()
+    App::default()
         .window::<MyOne>(render(foo))
         .window::<MyTwo>(render(bar))
         .window::<()>(render(bar))
