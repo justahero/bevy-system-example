@@ -1,11 +1,25 @@
 use std::{
     any::Any,
-    cell::{Ref, RefCell},
+    cell::{Ref, RefCell, RefMut},
     marker::PhantomData,
     ops::Deref,
 };
 
 use crate::app::WindowContext;
+
+pub struct State<'a, T> {
+    value: RefMut<'a, T>,
+    _marker: PhantomData<&'a mut T>,
+}
+
+impl<'a, T> State<'a, T> {
+    pub fn new(value: RefMut<'a, T>) -> Self {
+        Self {
+            value,
+            _marker: PhantomData::default(),
+        }
+    }
+}
 
 pub struct Res<'a, T: IntoSystemParam> {
     value: Ref<'a, T>,
@@ -43,5 +57,13 @@ where
 
     fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
         Res::new(T::convert(context).borrow())
+    }
+}
+
+impl<'res, T: 'static> SystemParam for State<'res, T> {
+    type Item<'new> = State<'new, T>;
+
+    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
+        todo!("")
     }
 }

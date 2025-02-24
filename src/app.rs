@@ -1,12 +1,12 @@
 use std::{
     any::{Any, TypeId},
-    cell::{Ref, RefCell},
+    cell::{Ref, RefCell, RefMut},
     collections::HashMap,
     ops::Deref,
 };
 
 use crate::{
-    param::{IntoSystemParam, SystemParam},
+    param::{IntoSystemParam, State, SystemParam},
     system::{IntoSystem, System},
 };
 
@@ -60,6 +60,11 @@ impl WindowContext {
             state: RefCell::new(state),
             surface: RefCell::new(Surface {}),
         }
+    }
+
+    /// Returns the associated state object
+    pub fn state<'res>(&self) -> &RefCell<Box<dyn Any>> {
+        &self.state
     }
 }
 

@@ -9,7 +9,7 @@ mod param;
 mod system;
 
 use app::{App, AppContext, CreateWindowHandler, Surface, render};
-use param::Res;
+use param::{Res, State};
 use std::{any::TypeId, marker::PhantomData, ops::Deref};
 
 struct MyOne {}
@@ -20,7 +20,7 @@ impl CreateWindowHandler for MyOne {
     }
 }
 
-fn foo(surface: Res<Surface>) {
+fn foo(surface: Res<Surface>, one: State<MyOne>) {
     println!("Surface bar called");
 }
 
