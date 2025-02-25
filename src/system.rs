@@ -7,6 +7,15 @@ pub struct FunctionSystem<Input, F> {
     marker: PhantomData<fn() -> Input>,
 }
 
+impl<Input, F> FunctionSystem<Input, F> {
+    pub fn new(f: F) -> Self {
+        Self {
+            f,
+            marker: PhantomData::default(),
+        }
+    }
+}
+
 pub trait System {
     fn call(&mut self, context: &mut WindowContext);
 }
@@ -66,10 +75,7 @@ macro_rules! impl_into_system {
             type System = FunctionSystem<($($params),*), Self>;
 
             fn into_system(self) -> Self::System {
-                FunctionSystem {
-                    f: self,
-                    marker: Default::default(),
-                }
+                FunctionSystem::new(self)
             }
         }
     };

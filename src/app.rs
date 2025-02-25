@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    param::{IntoSystemParam, SystemParam},
+    param::IntoSystemParam,
     system::{IntoSystem, System},
 };
 
@@ -59,17 +59,17 @@ impl Title {
     }
 }
 
-impl SystemParam for Title {
-    type Item<'new> = Title;
+impl IntoSystemParam for Title {
+    type Item<'new> = Self;
 
-    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
-        context.title.clone()
+    fn convert<'r>(context: &'r WindowContext) -> &'r RefCell<Self::Item<'r>> {
+        &context.title
     }
 }
 
 pub struct WindowContext {
     /// The window title.
-    title: Title,
+    title: RefCell<Title>,
     /// The state instance associated with the window
     state: RefCell<Box<dyn Any>>,
     /// The associated surface to "render" into.
@@ -79,7 +79,7 @@ pub struct WindowContext {
 impl WindowContext {
     pub fn new(state: Box<dyn Any>) -> Self {
         Self {
-            title: Title::new("Window"),
+            title: RefCell::new(Title::new("Window")),
             state: RefCell::new(state),
             surface: RefCell::new(Surface {}),
         }

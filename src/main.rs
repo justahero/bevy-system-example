@@ -7,7 +7,7 @@ mod param;
 mod system;
 
 use app::{App, CreateWindowHandler, Surface, Title, render};
-use param::{ResMut, State};
+use param::{Res, ResMut, State};
 
 #[derive(Debug)]
 struct MyOne {
@@ -31,14 +31,15 @@ impl CreateWindowHandler for MyTwo {
     }
 }
 
-fn foo(_surface: ResMut<Surface>, one: State<MyOne>) {
+fn foo(_surface: ResMut<Surface>, one: State<MyOne>, mut title: ResMut<Title>) {
+    *title = Title::new("Hello");
     println!("Function foo called with surface and state: {:?}", *one);
 }
 
-fn bar(title: Title, two: State<MyTwo>) {
+fn bar(two: State<MyTwo>, title: Res<Title>) {
     println!(
         "Function bar called with title: {:?} with value: {:?}",
-        title, *two
+        *title, *two
     );
 }
 

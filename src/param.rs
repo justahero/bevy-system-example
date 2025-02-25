@@ -2,7 +2,7 @@ use std::{
     any::Any,
     cell::{Ref, RefCell, RefMut},
     marker::PhantomData,
-    ops::Deref,
+    ops::{Deref, DerefMut},
 };
 
 use crate::app::WindowContext;
@@ -43,7 +43,15 @@ impl<'a, T: IntoSystemParam> Res<'a, T> {
     }
 }
 
-pub struct ResMut<'a, T: IntoSystemParam> {
+impl<'a, T: IntoSystemParam> Deref for Res<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.value.deref()
+    }
+}
+
+pub struct ResMut<'a, T: IntoSystemParam + Any> {
     value: RefMut<'a, T>,
     _marker: PhantomData<&'a mut T>,
 }
@@ -54,6 +62,20 @@ impl<'a, T: IntoSystemParam> ResMut<'a, T> {
             value,
             _marker: PhantomData::default(),
         }
+    }
+}
+
+impl<'a, T: IntoSystemParam> Deref for ResMut<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.value.deref()
+    }
+}
+
+impl<'a, T: IntoSystemParam> DerefMut for ResMut<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.value.deref_mut()
     }
 }
 
@@ -87,7 +109,7 @@ where
     T: for<'a> IntoSystemParam<Item<'a> = T>,
 {
     type Item<'new> = ResMut<'new, T>;
-    
+
     fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
         ResMut::new(T::convert(context).borrow_mut())
     }
@@ -101,17 +123,20 @@ impl<'res, T: 'static> SystemParam for State<'res, T> {
 
         // Check that the State object is not already borrowed mutably
         if let Err(_) = context.state().try_borrow_mut() {
-            panic!("State '{}' is already exclusively (mutably) borrowed!", expected_type_name);
+            panic!(
+                "State '{}' is already exclusively (mutably) borrowed!",
+                expected_type_name
+            );
         }
 
         // Check that the internal state can actually be casted into the target type T.
         {
             let borrow = context.state().borrow();
             match borrow.downcast_ref::<T>() {
-                Some(_) => {},
+                Some(_) => {}
                 None => {
                     panic!("Failed to cast state to '{}'", expected_type_name);
-                },
+                }
             }
         }
 
