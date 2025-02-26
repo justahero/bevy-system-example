@@ -17,7 +17,7 @@ impl<'a, T> State<'a, T> {
     pub fn new(value: RefMut<'a, Box<dyn Any>>) -> Self {
         Self {
             value,
-            _marker: PhantomData::default(),
+            _marker: PhantomData,
         }
     }
 }
@@ -45,12 +45,12 @@ impl<'a, T: IntoSystemParam> Res<'a, T> {
     pub fn new(value: Ref<'a, T>) -> Self {
         Self {
             value,
-            _marker: PhantomData::default(),
+            _marker: PhantomData,
         }
     }
 }
 
-impl<'a, T: IntoSystemParam> Deref for Res<'a, T> {
+impl<T: IntoSystemParam> Deref for Res<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -67,12 +67,12 @@ impl<'a, T: IntoSystemParam> ResMut<'a, T> {
     pub fn new(value: RefMut<'a, T>) -> Self {
         Self {
             value,
-            _marker: PhantomData::default(),
+            _marker: PhantomData,
         }
     }
 }
 
-impl<'a, T: IntoSystemParam> Deref for ResMut<'a, T> {
+impl<T: IntoSystemParam> Deref for ResMut<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -80,7 +80,7 @@ impl<'a, T: IntoSystemParam> Deref for ResMut<'a, T> {
     }
 }
 
-impl<'a, T: IntoSystemParam> DerefMut for ResMut<'a, T> {
+impl<T: IntoSystemParam> DerefMut for ResMut<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.value.deref_mut()
     }
@@ -91,45 +91,45 @@ pub trait SystemParam {
     /// Associated type `Item` is declared here to allow to re-assign the lifetime of `Self`.
     type Item<'new>;
 
-    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r>;
+    fn extract(context: &WindowContext) -> Self::Item<'_>;
 }
 
 pub trait IntoSystemParam: 'static {
     type Item<'new>;
 
-    fn convert<'r>(context: &'r WindowContext) -> &'r RefCell<Self::Item<'r>>;
+    fn convert(context: &WindowContext) -> &RefCell<Self::Item<'_>>;
 }
 
-impl<'res, T> SystemParam for Res<'res, T>
+impl<T> SystemParam for Res<'_, T>
 where
     T: for<'a> IntoSystemParam<Item<'a> = T>,
 {
     type Item<'new> = Res<'new, T>;
 
-    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
+    fn extract(context: &WindowContext) -> Self::Item<'_> {
         Res::new(T::convert(context).borrow())
     }
 }
 
-impl<'res, T: 'static> SystemParam for ResMut<'res, T>
+impl<T: 'static> SystemParam for ResMut<'_, T>
 where
     T: for<'a> IntoSystemParam<Item<'a> = T>,
 {
     type Item<'new> = ResMut<'new, T>;
 
-    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
+    fn extract(context: &WindowContext) -> Self::Item<'_> {
         ResMut::new(T::convert(context).borrow_mut())
     }
 }
 
-impl<'res, T: 'static> SystemParam for State<'res, T> {
+impl<T: 'static> SystemParam for State<'_, T> {
     type Item<'new> = State<'new, T>;
 
-    fn extract<'r>(context: &'r WindowContext) -> Self::Item<'r> {
+    fn extract(context: &WindowContext) -> Self::Item<'_> {
         let expected_type_name = core::any::type_name::<T>();
 
         // Check that the State object is not already borrowed mutably
-        if let Err(_) = context.state().try_borrow_mut() {
+        if context.state().try_borrow_mut().is_err() {
             panic!(
                 "State '{}' is already exclusively (mutably) borrowed!",
                 expected_type_name

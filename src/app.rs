@@ -17,7 +17,7 @@ pub struct Surface {}
 impl IntoSystemParam for Surface {
     type Item<'new> = Self;
 
-    fn convert<'r>(context: &'r WindowContext) -> &'r RefCell<Self::Item<'r>> {
+    fn convert(context: &WindowContext) -> &RefCell<Self::Item<'_>> {
         &context.surface
     }
 }
@@ -31,9 +31,7 @@ pub trait CreateWindowHandler {
 
 /// Implements for empty tuple.
 impl CreateWindowHandler for () {
-    fn create(_surface: &Surface) -> Self {
-        ()
-    }
+    fn create(_surface: &Surface) -> Self {}
 }
 
 /// Contains set of system functions, for now only "render".
@@ -76,7 +74,7 @@ impl Title {
 impl IntoSystemParam for Title {
     type Item<'new> = Self;
 
-    fn convert<'r>(context: &'r WindowContext) -> &'r RefCell<Self::Item<'r>> {
+    fn convert(context: &WindowContext) -> &RefCell<Self::Item<'_>> {
         &context.title
     }
 }
@@ -101,7 +99,7 @@ impl WindowContext {
     }
 
     /// Returns the associated state object
-    pub fn state<'res>(&self) -> &RefCell<Box<dyn Any>> {
+    pub fn state(&self) -> &RefCell<Box<dyn Any>> {
         &self.state
     }
 }
@@ -120,7 +118,7 @@ impl AppContext {
     }
 
     fn register(&mut self, state: Box<dyn Any>, handlers: WindowHandlers) {
-        let state_type_id = (&*state).type_id();
+        let state_type_id = (*state).type_id();
         let context = WindowContext::new(state);
         self.windows.insert(state_type_id, (context, handlers));
     }
