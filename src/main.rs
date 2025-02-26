@@ -36,11 +36,12 @@ fn foo(_surface: ResMut<Surface>, one: State<MyOne>, mut title: ResMut<Title>) {
     println!("Function foo called with surface and state: {:?}", *one);
 }
 
-fn bar(two: State<MyTwo>, title: Res<Title>) {
+fn bar(two: State<MyTwo>, title: Res<Title>, mut state: State<MyTwo>) {
     println!(
         "Function bar called with title: {:?} with value: {:?}",
         *title, *two
     );
+    *state.0 = 42;
 }
 
 fn bla() {

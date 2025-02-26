@@ -29,6 +29,12 @@ impl<T: 'static> Deref for State<'_, T> {
     }
 }
 
+impl<T: 'static> DerefMut for State<'_, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.value.downcast_mut().expect("Failed to cast object")
+    }
+}
+
 pub struct Res<'a, T: IntoSystemParam> {
     value: Ref<'a, T>,
     _marker: PhantomData<&'a T>,
