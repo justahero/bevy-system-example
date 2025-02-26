@@ -1,120 +1,57 @@
-#![allow(dead_code)]
-#![allow(unused_mut)]
 #![allow(unused_variables)]
+#![allow(dead_code)]
 
 /// Reference: https://github.com/PROMETHIA-27/dependency_injection_like_bevy_from_scratch/blob/main/src/chapter2/src/more_params.rs
 mod app;
+mod param;
+mod system;
 
-use app::{App, AppContext};
-use std::{any::TypeId, marker::PhantomData, ops::Deref};
+use app::{App, CreateWindowHandler, Surface, Title, render};
+use param::{Res, ResMut, State};
 
-struct FunctionSystem<Input, F> {
-    f: F,
-    marker: PhantomData<fn() -> Input>,
+#[derive(Debug)]
+struct MyOne {
+    title: String,
 }
 
-pub trait System {
-    fn call(&mut self, context: &mut AppContext);
-}
-
-trait IntoSystem<Input> {
-    type System: System;
-
-    fn into_system(self) -> Self::System;
-}
-
-impl<F: FnMut()> System for FunctionSystem<(), F> {
-    fn call(&mut self, _context: &mut AppContext) {
-        (self.f)()
-    }
-}
-
-impl<F: FnMut()> IntoSystem<()> for F
-where
-    for<'a, 'b> &'a mut F: FnMut(),
-{
-    type System = FunctionSystem<(), Self>;
-
-    fn into_system(self) -> Self::System {
-        FunctionSystem {
-            f: self,
-            marker: Default::default(),
+impl CreateWindowHandler for MyOne {
+    fn create(_surface: &Surface) -> Self {
+        MyOne {
+            title: "Hello World".to_string(),
         }
     }
 }
 
-impl<F, T1: SystemParam> System for FunctionSystem<(T1,), F>
-where
-    for<'a, 'b> &'a mut F: FnMut(T1) + FnMut(<T1 as SystemParam>::Item<'b>),
-{
-    fn call(&mut self, resources: &mut AppContext) {
-        fn call_inner<T1>(mut f: impl FnMut(T1), t1: T1) {
-            f(t1);
-        }
-        call_inner(&mut self.f, T1::retrieve(resources));
+#[derive(Debug)]
+struct MyTwo(pub i32);
+
+impl CreateWindowHandler for MyTwo {
+    fn create(_surface: &Surface) -> Self {
+        MyTwo(42)
     }
 }
 
-impl<F, T1: SystemParam> IntoSystem<(T1,)> for F
-where
-    for<'a, 'b> &'a mut F: FnMut(T1) + FnMut(<T1 as SystemParam>::Item<'b>),
-{
-    type System = FunctionSystem<(T1,), Self>;
-
-    fn into_system(self) -> Self::System {
-        FunctionSystem {
-            f: self,
-            marker: Default::default(),
-        }
-    }
+fn foo(_surface: ResMut<Surface>, one: State<MyOne>, mut title: ResMut<Title>) {
+    *title = Title::new("Hello");
+    println!("Function foo called with surface and state: {:?}", *one);
 }
 
-trait SystemParam {
-    type Item<'new>;
-
-    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r>;
+fn bar(two: State<MyTwo>, title: Res<Title>, mut state: State<MyTwo>) {
+    println!(
+        "Function bar called with title: {:?} with value: {:?}",
+        *title, *two
+    );
+    *state.0 = 42;
 }
 
-struct Res<'a, T: 'static> {
-    value: &'a T,
-}
-
-impl<'a, T: 'static> Res<'a, T> {
-    pub fn inner(&self) -> &'a T {
-        self.value
-    }
-}
-
-impl<T: 'static> Deref for Res<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        self.value
-    }
-}
-
-impl<'res, T: 'static> SystemParam for Res<'res, T> {
-    type Item<'new> = Res<'new, T>;
-
-    fn retrieve<'r>(context: &'r mut AppContext) -> Self::Item<'r> {
-        let value = context
-            .resources
-            .get(&TypeId::of::<T>())
-            .unwrap()
-            .downcast_ref()
-            .unwrap();
-        Res { value }
-    }
-}
-
-fn foo(number: Res<i32>) {
-    println!("Value is {0}", *number);
+fn bla() {
+    println!("Function bla called");
 }
 
 fn main() {
-    let mut app = App::new();
-    app.add_system(foo);
-    app.add_resource(42i32);
-    app.run();
-    app.run();
+    App::default()
+        .window::<MyOne>(render(foo))
+        .window::<MyTwo>(render(bar))
+        .window::<()>(render(bla))
+        .run();
 }
