@@ -11,7 +11,7 @@ impl<Input, F> FunctionSystem<Input, F> {
     pub fn new(f: F) -> Self {
         Self {
             f,
-            marker: PhantomData::default(),
+            marker: PhantomData,
         }
     }
 }
