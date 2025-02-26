@@ -7,6 +7,7 @@ use std::{
 
 use crate::app::WindowContext;
 
+/// Window related state accessor.
 pub struct State<'a, T> {
     value: RefMut<'a, Box<dyn Any>>,
     _marker: PhantomData<&'a mut T>,
