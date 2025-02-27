@@ -1,7 +1,6 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-/// Reference: https://github.com/PROMETHIA-27/dependency_injection_like_bevy_from_scratch/blob/main/src/chapter2/src/more_params.rs
 mod app;
 mod param;
 mod system;
@@ -31,7 +30,7 @@ impl CreateWindowHandler for MyTwo {
     }
 }
 
-fn foo(_surface: ResMut<Surface>, one: State<MyOne>, mut title: ResMut<Title>) {
+fn foo(_surface: Res<Surface>, one: State<MyOne>, mut title: ResMut<Title>) {
     *title = Title::new("Hello");
     println!("Function foo called with surface and state: {:?}", *one);
 }
